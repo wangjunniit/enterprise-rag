@@ -17,7 +17,7 @@ class DocumentChunk(Base):
     paragraph_num = Column(Integer)
     chunk_index = Column(Integer, nullable=False)
     content = Column(Text, nullable=False)
-    embedding = Column(Vector(768), nullable=False)  # 假设768维向量
+    embedding = Column(Vector(1024), nullable=False)  # Qwen3-Embedding-0.6B实际输出1024维向量
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
     extra_metadata = Column(JSON)
     
