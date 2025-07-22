@@ -23,30 +23,28 @@ class QAService:
             # 1. 查询向量
             q_emb = get_embedding(request.question)
             
-            # 2. 检索Top-K - 修复向量查询格式
-            vector_str = '[' + ','.join(map(str, q_emb)) + ']'
-            sql = text("""
-            SELECT *, embedding <=> :q_emb::vector as distance 
-            FROM documents_chunk
-            ORDER BY embedding <=> :q_emb::vector ASC 
-            LIMIT :topk
-            """)
-            docs = session.execute(sql, {
-                'q_emb': vector_str,
-                'topk': TOP_K
-            }).fetchall()
+            # 2. 检索Top-K
+            docs_with_distance = session.query(
+                DocumentChunk,
+                DocumentChunk.embedding.l2_distance(q_emb).label('distance')
+            ).order_by(
+                DocumentChunk.embedding.l2_distance(q_emb)
+            ).limit(TOP_K).all()
             
-            if not docs:
+            if not docs_with_distance:
                 return {"answer": "未找到相关信息", "sources": []}
             
             # 3. 重排序
             doc_list = [
-                {'content': d.content, 'meta': {
-                    'document_name': d.document_name,
-                    'page_num': d.page_num,
-                    'paragraph_num': d.paragraph_num,
-                    'distance': float(d.distance)
-                }} for d in docs
+                {
+                    'content': doc.content, 
+                    'meta': {
+                        'document_name': doc.document_name,
+                        'page_num': doc.page_num,
+                        'paragraph_num': doc.paragraph_num,
+                        'distance': float(distance)
+                    }
+                } for doc, distance in docs_with_distance
             ]
             reranked = rerank(request.question, doc_list)[:TOP_N]
             
@@ -120,7 +118,7 @@ class QAService:
         for question in questions:
             try:
                 from api.routes.qa import QARequest
-                request = QARequest(question=question)
+                request = QARequest(question=question, history=[])
                 response = await self.answer_question(request)
                 results.append({
                     "question": question,
@@ -143,19 +141,23 @@ class QAService:
             chunks = session.query(DocumentChunk).filter(
                 DocumentChunk.content.ilike(f'%{query}%')
             ).limit(limit).all()
-            
+
+            results = []
+            for chunk in chunks:
+                content = getattr(chunk, 'content', '') or ''
+                preview = content[:SEARCH_CONTENT_PREVIEW_LENGTH] + '...' if len(content) > SEARCH_CONTENT_PREVIEW_LENGTH else content
+                results.append({
+                    "document_id": chunk.document_id,
+                    "document_name": chunk.document_name,
+                    "chunk_index": chunk.chunk_index,
+                    "content": preview,
+                    "page_num": chunk.page_num,
+                    "paragraph_num": chunk.paragraph_num
+                })
+
             return {
                 "query": query,
-                "results": [
-                    {
-                        "document_id": chunk.document_id,
-                        "document_name": chunk.document_name,
-                        "chunk_index": chunk.chunk_index,
-                        "content": chunk.content[:SEARCH_CONTENT_PREVIEW_LENGTH] + '...' if len(chunk.content) > SEARCH_CONTENT_PREVIEW_LENGTH else chunk.content,
-                        "page_num": chunk.page_num,
-                        "paragraph_num": chunk.paragraph_num
-                    } for chunk in chunks
-                ]
+                "results": results
             }
         except Exception as e:
             logger.error(f"内容搜索失败: {e}")

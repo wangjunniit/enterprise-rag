@@ -39,7 +39,7 @@ class RerankModel:
         )
         with torch.no_grad():
             outputs = self.model(**inputs)
-            score = torch.sigmoid(outputs.logits).item()
+            score = torch.sigmoid(outputs.logits)[:, 1].item()
             return score
     
     def rerank(self, query: str, docs: list):

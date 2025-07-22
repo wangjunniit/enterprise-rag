@@ -51,7 +51,7 @@ CREATE TABLE documents_chunk (
     paragraph_num INT,                    -- 段落号（如有）
     chunk_index INT,                      -- 分块序号
     content TEXT,                         -- 分块文本内容
-    embedding VECTOR(768),                -- 向量（假设Qwen3-Embedding-0.6B输出为768维）
+    embedding VECTOR(1024),               -- 向量（Qwen3-Embedding-0.6B实际输出为1024维）
     created_at TIMESTAMP DEFAULT NOW(),   -- 创建时间
     extra_metadata JSONB                  -- 其他可扩展元数据（如文档类型、作者等）
 );
