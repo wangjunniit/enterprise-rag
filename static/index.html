@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>企业RAG知识库</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .section h2 {
+            color: #555;
+            margin-top: 0;
+        }
+
+        input,
+        textarea,
+        button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+        }
+
+        .error {
+            border-left-color: #dc3545;
+            background-color: #f8d7da;
+        }
+
+        .sources {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .source-item {
+            margin: 5px 0;
+            padding: 5px;
+            background: #e9ecef;
+            border-radius: 3px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+        }
+
+        .stat-item {
+            padding: 10px;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🤖 企业RAG知识库</h1>
+
+        <!-- 系统状态 -->
+        <div class="section">
+            <h2>📊 系统状态</h2>
+            <div class="stats" id="stats">
+                <div class="stat-item">
+                    <div class="stat-number" id="totalDocs">-</div>
+                    <div>文档数量</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="totalChunks">-</div>
+                    <div>分块数量</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="avgChunks">-</div>
+                    <div>平均分块/文档</div>
+                </div>
+            </div>
+            <button onclick="loadStats()">刷新状态</button>
+        </div>
+
+        <!-- 文档导入 -->
+        <div class="section">
+            <h2>📁 文档导入</h2>
+            <input type="text" id="importPath" placeholder="输入要导入的目录路径，例如: /path/to/documents">
+            <button onclick="importDirectory()">导入目录</button>
+            <button onclick="syncDirectory()">增量同步</button>
+            <div id="importResult"></div>
+        </div>
+
+        <!-- 问答测试 -->
+        <div class="section">
+            <h2>💬 智能问答</h2>
+            <textarea id="question" rows="3" placeholder="输入您的问题..."></textarea>
+            <button onclick="askQuestion()">提问</button>
+            <div id="qaResult"></div>
+        </div>
+
+        <!-- 文档管理 -->
+        <div class="section">
+            <h2>📚 文档管理</h2>
+            <input type="text" id="searchDocs" placeholder="搜索文档名称...">
+            <button onclick="searchDocuments()">搜索文档</button>
+            <button onclick="listDocuments()">列出所有文档</button>
+            <div id="docsResult"></div>
+        </div>
+
+        <!-- 内容搜索 -->
+        <div class="section">
+            <h2>🔍 内容搜索</h2>
+            <input type="text" id="searchContent" placeholder="搜索文档内容...">
+            <button onclick="searchContent()">搜索内容</button>
+            <div id="searchResult"></div>
+        </div>
+
+        <!-- 系统监控 -->
+        <div class="section">
+            <h2>🖥️ 系统监控</h2>
+            <button onclick="getSystemInfo()">获取系统信息</button>
+            <button onclick="getModelStatus()">模型状态</button>
+            <div id="systemInfo"></div>
+        </div>
+
+        <!-- 批量问答 -->
+        <div class="section">
+            <h2>📝 批量问答</h2>
+            <textarea id="batchQuestions" rows="5" placeholder="输入多个问题，每行一个..."></textarea>
+            <button onclick="batchQA()">批量提问</button>
+            <div id="batchResult"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '';
+
+        // 加载系统统计信息
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_BASE}/system/stats`);
+                const data = await response.json();
+                document.getElementById('totalDocs').textContent = data.total_documents;
+                document.getElementById('totalChunks').textContent = data.total_chunks;
+                document.getElementById('avgChunks').textContent = data.avg_chunks_per_doc;
+            } catch (error) {
+                console.error('加载统计信息失败:', error);
+            }
+        }
+
+        // 导入目录
+        async function importDirectory() {
+            const path = document.getElementById('importPath').value;
+            if (!path) {
+                alert('请输入目录路径');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/documents/import`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ directory: path })
+                });
+                const data = await response.json();
+                document.getElementById('importResult').innerHTML =
+                    `<div class="result">${data.message}</div>`;
+            } catch (error) {
+                document.getElementById('importResult').innerHTML =
+                    `<div class="result error">导入失败: ${error.message}</div>`;
+            }
+        }
+
+        // 增量同步
+        async function syncDirectory() {
+            const path = document.getElementById('importPath').value;
+            if (!path) {
+                alert('请输入目录路径');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/documents/sync`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ directory: path })
+                });
+                const data = await response.json();
+                document.getElementById('importResult').innerHTML =
+                    `<div class="result">${data.message}</div>`;
+            } catch (error) {
+                document.getElementById('importResult').innerHTML =
+                    `<div class="result error">同步失败: ${error.message}</div>`;
+            }
+        }
+
+        // 提问
+        async function askQuestion() {
+            const question = document.getElementById('question').value;
+            if (!question) {
+                alert('请输入问题');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/qa`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: question })
+                });
+                const data = await response.json();
+
+                let sourcesHtml = '';
+                if (data.sources && data.sources.length > 0) {
+                    sourcesHtml = '<div class="sources"><strong>参考来源:</strong>';
+                    data.sources.forEach((source, index) => {
+                        sourcesHtml += `<div class="source-item">
+                            ${index + 1}. ${source.document_name} 
+                            ${source.page_num ? `(页码: ${source.page_num})` : ''}
+                            <br><small>${source.content}</small>
+                        </div>`;
+                    });
+                    sourcesHtml += '</div>';
+                }
+
+                document.getElementById('qaResult').innerHTML =
+                    `<div class="result">
+                        <strong>回答:</strong><br>${data.answer}
+                        ${sourcesHtml}
+                    </div>`;
+            } catch (error) {
+                document.getElementById('qaResult').innerHTML =
+                    `<div class="result error">问答失败: ${error.message}</div>`;
+            }
+        }
+
+        // 搜索文档
+        async function searchDocuments() {
+            const search = document.getElementById('searchDocs').value;
+            const url = search ?
+                `${API_BASE}/documents?search=${encodeURIComponent(search)}` :
+                `${API_BASE}/documents`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                let html = '<div class="result"><strong>文档列表:</strong><br>';
+                data.documents.forEach(doc => {
+                    html += `<div style="margin: 10px 0; padding: 10px; border: 1px solid #ddd;">
+                        <strong>${doc.document_name}</strong><br>
+                        <small>路径: ${doc.document_path}</small><br>
+                        <small>分块数: ${doc.chunk_count} | 创建时间: ${doc.created_at}</small>
+                    </div>`;
+                });
+                html += '</div>';
+
+                document.getElementById('docsResult').innerHTML = html;
+            } catch (error) {
+                document.getElementById('docsResult').innerHTML =
+                    `<div class="result error">搜索失败: ${error.message}</div>`;
+            }
+        }
+
+        // 列出文档
+        function listDocuments() {
+            document.getElementById('searchDocs').value = '';
+            searchDocuments();
+        }
+
+        // 搜索内容
+        async function searchContent() {
+            const query = document.getElementById('searchContent').value;
+            if (!query) {
+                alert('请输入搜索内容');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/qa/search?query=${encodeURIComponent(query)}`);
+                const data = await response.json();
+
+                let html = `<div class="result"><strong>搜索结果 (${data.results.length}):</strong><br>`;
+                data.results.forEach(result => {
+                    html += `<div style="margin: 10px 0; padding: 10px; border: 1px solid #ddd;">
+                        <strong>${result.document_name}</strong> - 分块 ${result.chunk_index}<br>
+                        <div style="margin: 5px 0;">${result.content}</div>
+                        ${result.page_num ? `<small>页码: ${result.page_num}</small>` : ''}
+                    </div>`;
+                });
+                html += '</div>';
+
+                document.getElementById('searchResult').innerHTML = html;
+            } catch (error) {
+                document.getElementById('searchResult').innerHTML =
+                    `<div class="result error">搜索失败: ${error.message}</div>`;
+            }
+        }
+
+        // 获取系统信息
+        async function getSystemInfo() {
+            try {
+                const response = await fetch(`${API_BASE}/system/info`);
+                const data = await response.json();
+
+                let html = '<div class="result"><strong>系统信息:</strong><br>';
+                html += `<div style="margin: 10px 0;">
+                    <strong>平台:</strong> ${data.platform} ${data.platform_version}<br>
+                    <strong>架构:</strong> ${data.architecture}<br>
+                    <strong>处理器:</strong> ${data.processor}<br>
+                    <strong>CPU核心数:</strong> ${data.cpu_count}<br>
+                    <strong>总内存:</strong> ${data.memory_total}<br>
+                    <strong>可用内存:</strong> ${data.memory_available}<br>
+                    <strong>磁盘空间:</strong> ${data.disk_usage}
+                </div>`;
+                html += '</div>';
+
+                document.getElementById('systemInfo').innerHTML = html;
+            } catch (error) {
+                document.getElementById('systemInfo').innerHTML =
+                    `<div class="result error">获取系统信息失败: ${error.message}</div>`;
+            }
+        }
+
+        // 获取模型状态
+        async function getModelStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/system/model_status`);
+                const data = await response.json();
+
+                let html = '<div class="result"><strong>模型状态:</strong><br>';
+                html += `<div style="margin: 10px 0;">
+                    <div style="margin: 5px 0;">
+                        <strong>向量化模型:</strong> 
+                        <span style="color: ${data.embedding_model.loaded ? 'green' : 'red'}">
+                            ${data.embedding_model.loaded ? '✅ 已加载' : '❌ 未加载'}
+                        </span>
+                        ${data.embedding_model.model_name ? `<br><small>${data.embedding_model.model_name}</small>` : ''}
+                    </div>
+                    <div style="margin: 5px 0;">
+                        <strong>重排序模型:</strong> 
+                        <span style="color: ${data.rerank_model.loaded ? 'green' : 'red'}">
+                            ${data.rerank_model.loaded ? '✅ 已加载' : '❌ 未加载'}
+                        </span>
+                        ${data.rerank_model.model_name ? `<br><small>${data.rerank_model.model_name}</small>` : ''}
+                    </div>
+                    <div style="margin: 5px 0;">
+                        <strong>生成模型:</strong> 
+                        <span style="color: ${data.llm_model.loaded ? 'green' : 'red'}">
+                            ${data.llm_model.loaded ? '✅ 已加载' : '❌ 未加载'}
+                        </span>
+                        ${data.llm_model.model_name ? `<br><small>${data.llm_model.model_name}</small>` : ''}
+                    </div>
+                </div>`;
+                html += '</div>';
+
+                document.getElementById('systemInfo').innerHTML = html;
+            } catch (error) {
+                document.getElementById('systemInfo').innerHTML =
+                    `<div class="result error">获取模型状态失败: ${error.message}</div>`;
+            }
+        }
+
+        // 批量问答
+        async function batchQA() {
+            const questionsText = document.getElementById('batchQuestions').value;
+            if (!questionsText.trim()) {
+                alert('请输入问题');
+                return;
+            }
+
+            const questions = questionsText.split('\n').filter(q => q.trim());
+            if (questions.length === 0) {
+                alert('请输入有效的问题');
+                return;
+            }
+
+            if (questions.length > 10) {
+                alert('批量问答最多支持10个问题');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/qa/batch`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(questions)
+                });
+                const data = await response.json();
+
+                let html = '<div class="result"><strong>批量问答结果:</strong><br>';
+                data.results.forEach((result, index) => {
+                    const status = result.success ? '✅' : '❌';
+                    const bgColor = result.success ? '#d4edda' : '#f8d7da';
+                    html += `<div style="margin: 10px 0; padding: 10px; background: ${bgColor}; border-radius: 4px;">
+                        <strong>${status} 问题 ${index + 1}:</strong> ${result.question}<br>
+                        ${result.success ?
+                            `<strong>回答:</strong> ${result.answer}` :
+                            `<strong>错误:</strong> ${result.error}`
+                        }
+                    </div>`;
+                });
+                html += '</div>';
+
+                document.getElementById('batchResult').innerHTML = html;
+            } catch (error) {
+                document.getElementById('batchResult').innerHTML =
+                    `<div class="result error">批量问答失败: ${error.message}</div>`;
+            }
+        }
+
+        // 页面加载时获取统计信息
+        window.onload = function () {
+            loadStats();
+        };
+    </script>
+</body>
+
+</html>

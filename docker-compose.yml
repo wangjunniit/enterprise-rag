@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # PostgreSQL数据库服务
+  postgres:
+    image: pgvector/pgvector:pg14
+    container_name: rag-postgres
+    environment:
+      POSTGRES_DB: rag
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # RAG应用服务
+  rag-app:
+    build: .
+    container_name: rag-app
+    environment:
+      PG_HOST: postgres
+      PG_PORT: 5432
+      PG_USER: postgres
+      PG_PASSWORD: postgres
+      PG_DB: rag
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8000
+      DEBUG: false
+      LOG_LEVEL: INFO
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models
+      - ./logs:/app/logs
+      - ./documents:/app/documents  # 挂载文档目录
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/system/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  postgres_data:
