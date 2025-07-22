@@ -44,10 +44,11 @@ class ImportService:
             "message": f"开始增量同步目录: {directory}，处理将在后台进行"
         }
     
-    async def _process_import(self, directory: str):
+    def _process_import(self, directory: str):
         """后台处理导入任务"""
-        session = SessionLocal()
+        session = None
         try:
+            session = SessionLocal()
             logger.info(f"开始处理目录: {directory}")
             chunks = parse_directory(directory)
             
@@ -97,21 +98,38 @@ class ImportService:
                 except Exception as e:
                     logger.error(f"处理文档块失败: {e}")
                     failed_files += 1
-                    session.rollback()
+                    try:
+                        session.rollback()
+                    except Exception as rollback_error:
+                        logger.error(f"回滚失败: {rollback_error}")
             
-            session.commit()
-            logger.info(f"导入完成: 成功 {processed_files} 个，失败 {failed_files} 个")
+            # 最终提交
+            try:
+                session.commit()
+                logger.info(f"导入完成: 成功 {processed_files} 个，失败 {failed_files} 个")
+            except Exception as commit_error:
+                logger.error(f"最终提交失败: {commit_error}")
+                session.rollback()
             
         except Exception as e:
             logger.error(f"导入过程出错: {e}")
-            session.rollback()
+            if session:
+                try:
+                    session.rollback()
+                except Exception as rollback_error:
+                    logger.error(f"回滚失败: {rollback_error}")
         finally:
-            session.close()
+            if session:
+                try:
+                    session.close()
+                except Exception as close_error:
+                    logger.error(f"关闭数据库连接失败: {close_error}")
     
-    async def _process_sync(self, directory: str):
+    def _process_sync(self, directory: str):
         """后台处理增量同步"""
-        session = SessionLocal()
+        session = None
         try:
+            session = SessionLocal()
             logger.info(f"开始增量同步目录: {directory}")
             
             # 获取现有文档的信息
@@ -203,6 +221,14 @@ class ImportService:
             
         except Exception as e:
             logger.error(f"增量同步出错: {e}")
-            session.rollback()
+            if session:
+                try:
+                    session.rollback()
+                except Exception as rollback_error:
+                    logger.error(f"回滚失败: {rollback_error}")
         finally:
-            session.close()
+            if session:
+                try:
+                    session.close()
+                except Exception as close_error:
+                    logger.error(f"关闭数据库连接失败: {close_error}")
