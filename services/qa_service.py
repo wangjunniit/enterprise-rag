@@ -23,12 +23,12 @@ class QAService:
             # 1. 查询向量
             q_emb = get_embedding(request.question)
             
-            # 2. 检索Top-K
+            # 2. 检索Top-K (使用余弦相似度)
             docs_with_distance = session.query(
                 DocumentChunk,
-                DocumentChunk.embedding.l2_distance(q_emb).label('distance')
+                DocumentChunk.embedding.cosine_distance(q_emb).label('distance')
             ).order_by(
-                DocumentChunk.embedding.l2_distance(q_emb)
+                DocumentChunk.embedding.cosine_distance(q_emb)
             ).limit(TOP_K).all()
             
             if not docs_with_distance:
