@@ -1,12 +1,14 @@
 fastapi
 uvicorn
 langchain_community
+langchain
 PyMuPDF
 python-docx
 pandas
 markdown
 unstructured
 pytesseract
+Pillow
 SQLAlchemy
 psycopg2-binary
 pgvector
@@ -16,4 +18,6 @@ sentence-transformers
 accelerate
 bitsandbytes
 psutil
-python-dotenv 
+python-dotenv
+openpyxl
+xlrd 
