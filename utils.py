@@ -3,7 +3,9 @@ import os
 import time
 from functools import wraps
 from typing import Any, Callable
+
 from config import LOG_LEVEL
+
 
 def setup_logging():
     """配置日志系统"""

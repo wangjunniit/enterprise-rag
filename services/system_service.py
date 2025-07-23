@@ -1,9 +1,10 @@
+import logging
+
 from fastapi import HTTPException
-from sqlalchemy.orm import Session
+
+from config import EMBEDDING_MODEL, RERANK_MODEL, LLM_MODEL
 from db import SessionLocal
 from models import DocumentChunk
-from config import EMBEDDING_MODEL, RERANK_MODEL, LLM_MODEL
-import logging
 
 logger = logging.getLogger(__name__)
 

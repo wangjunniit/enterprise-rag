@@ -1,10 +1,10 @@
-from fastapi import APIRouter, HTTPException, BackgroundTasks
-from pydantic import BaseModel, Field
-from typing import List, Optional
 import logging
+
+from fastapi import APIRouter, BackgroundTasks
+from pydantic import BaseModel, Field
+
 from services.document_service import DocumentService
 from services.import_service import ImportService
-from config import DEFAULT_PAGE_SIZE, CHUNKS_PAGE_SIZE
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/documents", tags=["文档管理"])

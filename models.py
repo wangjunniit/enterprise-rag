@@ -1,7 +1,7 @@
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import Column, Integer, String, Text, DateTime, JSON, Index
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
-from pgvector.sqlalchemy import Vector
 
 Base = declarative_base()
 

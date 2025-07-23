@@ -1,7 +1,8 @@
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
-import numpy as np
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+
 from config import RERANK_MODEL, DEVICE, MODEL_CACHE_DIR, RERANK_MAX_LENGTH, HF_ENDPOINT
+
 
 class RerankModel:
     def __init__(self, model_name=None):

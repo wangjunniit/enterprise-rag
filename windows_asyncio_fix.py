@@ -5,7 +5,7 @@ import asyncio
 import logging
 import platform
 import warnings
-from typing import Any, Dict
+
 
 def setup_windows_asyncio_fix():
     """设置Windows系统的asyncio修复"""

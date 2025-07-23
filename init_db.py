@@ -2,9 +2,9 @@
 """
 数据库初始化脚本
 """
-import sys
-import os
 import logging
+import os
+import sys
 from pathlib import Path
 
 # 设置环境变量强制使用UTF-8编码

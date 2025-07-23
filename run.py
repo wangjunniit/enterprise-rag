@@ -2,15 +2,12 @@
 """
 企业RAG应用启动脚本
 """
-import uvicorn
-import os
 import sys
-import platform
-import asyncio
 from pathlib import Path
 
+import uvicorn
+
 # 修复Windows上的asyncio连接重置错误
-import windows_asyncio_fix  # 自动应用Windows asyncio修复
 
 # 添加项目根目录到Python路径
 project_root = Path(__file__).parent

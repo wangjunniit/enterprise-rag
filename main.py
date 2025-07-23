@@ -1,21 +1,19 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-import logging
-import platform
-import asyncio
-from db import init_db
-from config import DEBUG
-from utils import setup_logging
-
-# 修复Windows上的asyncio连接重置错误
-import windows_asyncio_fix  # 自动应用Windows asyncio修复
+from fastapi.staticfiles import StaticFiles
 
 # 导入路由
 from api.routes.documents import router as documents_router
 from api.routes.qa import router as qa_router
 from api.routes.system import router as system_router
+from config import DEBUG
+from db import init_db
+from utils import setup_logging
+
+# 修复Windows上的asyncio连接重置错误
 
 # 设置日志
 setup_logging()

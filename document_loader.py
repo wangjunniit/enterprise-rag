@@ -1,20 +1,21 @@
-import os
 import hashlib
-from typing import List, Dict, Any
 import logging
-from langchain_community.document_loaders import (
-    TextLoader, 
-    PyMuPDFLoader,
-    Docx2txtLoader, 
-    UnstructuredMarkdownLoader
-)
+import os
+from typing import List, Dict, Any
+
+import pandas as pd
 import pytesseract
 from PIL import Image
-import pandas as pd
-from config import CHUNK_SIZE, CHUNK_OVERLAP, SUPPORTED_EXTS, MAX_FILE_SIZE_MB
-
 # 分块工具
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import (
+    TextLoader,
+    PyMuPDFLoader,
+    Docx2txtLoader,
+    UnstructuredMarkdownLoader
+)
+
+from config import CHUNK_SIZE, CHUNK_OVERLAP, SUPPORTED_EXTS, MAX_FILE_SIZE_MB
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)

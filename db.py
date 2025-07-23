@@ -1,8 +1,10 @@
+import logging
+
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
+
 from config import PG_URL
 from models import Base
-import logging
 
 logger = logging.getLogger(__name__)
 

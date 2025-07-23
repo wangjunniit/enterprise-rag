@@ -1,12 +1,13 @@
+import logging
+import os
+
 from fastapi import HTTPException, BackgroundTasks
-from sqlalchemy.orm import Session
+
+from config import MAX_FILE_SIZE_MB
 from db import SessionLocal
-from models import DocumentChunk
 from document_loader import parse_directory, parse_document, generate_document_id
 from embedding import get_embedding
-from config import MAX_FILE_SIZE_MB
-import os
-import logging
+from models import DocumentChunk
 
 logger = logging.getLogger(__name__)
 

@@ -1,6 +1,8 @@
-from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
-from config import LLM_MODEL, DEVICE, MODEL_CACHE_DIR, LLM_INPUT_MAX_LENGTH, LLM_OUTPUT_MAX_LENGTH, LLM_TEMPERATURE, HF_ENDPOINT
+from transformers import AutoTokenizer, AutoModelForCausalLM
+
+from config import LLM_MODEL, DEVICE, MODEL_CACHE_DIR, HF_ENDPOINT
+
 
 class LLMModel:
     def __init__(self, model_name=None):

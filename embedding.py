@@ -1,7 +1,8 @@
-from transformers import AutoTokenizer, AutoModel
 import torch
-import numpy as np
+from transformers import AutoTokenizer, AutoModel
+
 from config import EMBEDDING_MODEL, DEVICE, MODEL_CACHE_DIR, EMBEDDING_MAX_LENGTH, HF_ENDPOINT
+
 
 class EmbeddingModel:
     def __init__(self, model_name=None):

@@ -1,5 +1,7 @@
-from fastapi import APIRouter, HTTPException
 import logging
+
+from fastapi import APIRouter
+
 from services.system_service import SystemService
 
 logger = logging.getLogger(__name__)

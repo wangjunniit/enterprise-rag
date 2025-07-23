@@ -2,10 +2,11 @@
 """
 环境检查脚本 - 检查依赖和配置
 """
-import sys
-import os
 import importlib
+import os
+import sys
 from pathlib import Path
+
 
 def check_python_version():
     """检查Python版本"""

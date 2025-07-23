@@ -1,8 +1,9 @@
+import logging
+
 from fastapi import HTTPException
-from sqlalchemy.orm import Session
+
 from db import SessionLocal
 from models import DocumentChunk
-import logging
 
 logger = logging.getLogger(__name__)
 

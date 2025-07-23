@@ -1,9 +1,11 @@
+import logging
+from typing import List, Optional
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from typing import List, Optional
-import logging
-from services.qa_service import QAService
+
 from config import QUESTION_MAX_LENGTH, SEARCH_DEFAULT_LIMIT
+from services.qa_service import QAService
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/qa", tags=["智能问答"])
